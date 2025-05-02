@@ -14,6 +14,22 @@ template QuadraticEquation() {
     signal output out;  // If res is correct , then return 1 , else 0 . 
 
     // your code here
+
+    var n = 3;
+    signal coeffs[n];
+    coeffs <== [a, b, c];
+
+    signal pows[n+1];
+    signal comb[n+1];
+    pows[n] <== 1;
+    comb[n] <== 0;
+
+    for (var i = n-1; i >= 0; i--) {
+        comb[i] <== comb[i+1] + pows[i+1] * coeffs[i];
+        pows[i] <== pows[i+1] * x;
+    }
+
+    out <== IsEqual()([res, comb[0]]);
 }
 
 component main  = QuadraticEquation();
