@@ -8,6 +8,16 @@ template ForLoop() {
 
 // Your Code here..
 
+  signal input a[2];
+  signal output c;
+
+  signal cs[5];
+  cs[0] <== 0;
+  for (var i = 0; i < 4; i++) {
+    cs[i+1] <== cs[i] + a[0] + a[1];
+  }
+
+  c <== cs[4];
 }  
 
 component main = ForLoop();
