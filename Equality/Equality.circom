@@ -11,14 +11,14 @@ template Equality() {
   signal input a[3];
   signal output c;
 
-  signal calcs[3];
-  calcs[0] <== 0;
-  for (var i = 1; i < 3; i++) {
-    calcs[i] <== calcs[i-1] + a[0] - a[i];
+  signal calcs[2];
+  calcs[0] <== a[0] - a[1];
+  for (var i = 1; i < 2; i++) {
+    calcs[i] <== calcs[i-1] + a[0] - a[i+1];
   }
 
   component isz = IsZero();
-  isz.in <== calcs[2];
+  isz.in <== calcs[1];
   c <== isz.out;
 }
 

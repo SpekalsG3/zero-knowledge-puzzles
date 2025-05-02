@@ -11,13 +11,13 @@ template ForLoop() {
   signal input a[2];
   signal output c;
 
-  signal cs[5];
-  cs[0] <== 0;
-  for (var i = 0; i < 4; i++) {
+  signal cs[4];
+  cs[0] <== a[0] + a[1];
+  for (var i = 0; i < 3; i++) {
     cs[i+1] <== cs[i] + a[0] + a[1];
   }
 
-  c <== cs[4];
+  c <== cs[3];
 }  
 
 component main = ForLoop();
