@@ -1,7 +1,8 @@
 pragma circom 2.1.4;
 
 include "../node_modules/circomlib/circuits/comparators.circom";
-
+include "../node_modules/circomlib/circuits/mimc.circom";
+include "../node_modules/circomlib/circuits/gates.circom";
 
 /*
     Given a 4x4 sudoku board with array signal input "question" and "solution", check if the solution is correct.
@@ -19,11 +20,50 @@ include "../node_modules/circomlib/circuits/comparators.circom";
     "out" is the signal output of the circuit. "out" is 1 if the solution is correct, otherwise 0.                                                                               
 */
 
+template EvalPolyFactor(n) {
+    signal input x;
+    signal input in[n];
+    signal output out;
+
+    signal t[n];
+    t[0] <== x - in[0];
+    for (var i = 1; i < n; i++) {
+        t[i] <== t[i-1] * (x - in[i]);
+    }
+
+    out <== t[n-1];
+}
+
+template CheckSudokuLine(n) {
+    signal input in[n];
+    signal output out;
+
+    signal orig[n];
+    for (var i = 0; i < n; i++) {
+        orig[i] <== i + 1;
+    }
+
+    component mimc = MultiMiMC7(n, 10);
+    mimc.in <== in;
+    mimc.k <== 1;
+
+    component evalIn = EvalPolyFactor(n);
+    evalIn.x <== mimc.out;
+    evalIn.in <== in;
+
+    component evalOrig = EvalPolyFactor(n);
+    evalOrig.x <== mimc.out;
+    evalOrig.in <== orig;
+
+    out <== IsEqual()([evalIn.out, evalOrig.out]);
+}
+
 
 template Sudoku () {
     // Question Setup 
     signal input  question[16];
     signal input solution[16];
+
     signal output out;
     
     // Checking if the question is valid
@@ -73,9 +113,43 @@ template Sudoku () {
     3 === row4[3].out + row4[2].out + row4[1].out + row4[0].out; 
 
     // Write your solution from here.. Good Luck!
-    
-    
-   
+
+    component checks[12];
+
+    for (var i = 0; i < 4; i++) {
+        // rows
+        var m = i * 4;
+        checks[i] = CheckSudokuLine(4);
+        checks[i].in <== [solution[m+0], solution[m+1], solution[m+2], solution[m+3]];
+
+        // columns
+        checks[4+i] = CheckSudokuLine(4);
+        checks[4+i].in <== [solution[0+i], solution[4+i], solution[8+i], solution[12+i]];
+    }
+
+    // boxes
+    // no real pattern here
+    checks[7+1] = CheckSudokuLine(4);
+    checks[7+1].in <== [solution[ 0], solution[ 1], solution[ 4], solution[ 5]];
+    checks[7+2] = CheckSudokuLine(4);
+    checks[7+2].in <== [solution[ 2], solution[ 3], solution[ 6], solution[ 7]];
+    checks[7+3] = CheckSudokuLine(4);
+    checks[7+3].in <== [solution[ 8], solution[ 9], solution[12], solution[13]];
+    checks[7+4] = CheckSudokuLine(4);
+    checks[7+4].in <== [solution[10], solution[11], solution[14], solution[15]];
+
+    component ands[12];
+    signal flags[13];
+    flags[0] <== 1;
+
+    for (var i = 0; i < 12; i++) {
+        ands[i] = AND();
+        ands[i].a <== flags[i];
+        ands[i].b <== checks[i].out;
+        flags[i+1] <== ands[i].out;
+    }
+
+    out <== flags[12];
 }
 
 
